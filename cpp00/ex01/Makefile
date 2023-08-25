@@ -60,11 +60,10 @@ rm_bin:
 run: $(NAME)
 	./phonebook
 
+cor:
+	for i in $$(seq 8); do \
+		expect input_script.exp; \
+    done
+		expect keep_working.exp; \
 
-# The primary purpose of using .PHONY targets is to avoid 
-# conflicts and ensure that the specified targets are executed
-# every time they are invoked, regardless of whether there are
-# actual files with the same names. It helps prevent unexpected 
-# behavior in situations where a file named the same as a target
-# exists in the directory.
-.PHONY: all mk_bin clean fclean rm_bin re run
+.PHONY: all mk_bin clean fclean rm_bin re run cor

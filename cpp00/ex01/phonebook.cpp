@@ -12,13 +12,12 @@ PhoneBook::~PhoneBook(){}
 std::string     ft_trunc(std::string str)
 {
     std::string trunc;
-
-    if(str.length() < 11)
-        return (str);
+    
     trunc = str;
-    trunc[9] = '.';
-    trunc[10] = '\0';
-    return(trunc);
+    if(str.length() <= 10)
+        return(str);
+    else
+        return(trunc.substr(0,9) + ".");
 }
 
 void PhoneBook::print()

@@ -1,0 +1,20 @@
+#!/usr/bin/expect
+
+set timeout 0.5   ;# Set the timeout to 1 second
+
+spawn ./phonebook
+for {set i 0} {$i < 8} {incr i} {
+expect "Please enter command:"
+send "ADD\r"
+expect "Enter First Name:"
+send "Billy\r"
+expect "Enter Last Name:"
+send "Patate\r"
+expect "Enter Nickname:"
+send "Bill\r"
+expect "Enter Phone Number:"
+send "123-456-7890\r"
+expect "Enter Darkest Secret:"
+send "Jaime les patates\r"
+}
+interact   ;       # Allow interaction
