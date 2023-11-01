@@ -14,6 +14,7 @@ public:
     Fixed(const float floatValue);
     Fixed(const Fixed &other);
     Fixed &operator=(const Fixed &other);
+
     ~Fixed();
 
     int getRawBits() const;
@@ -21,6 +22,8 @@ public:
     float toFloat() const;
     int toInt() const;
 
-    // Overloaded insertion operator
-    friend std::ostream &operator<<(std::ostream &os, const Fixed &fixed);
+
 };
+
+// Overloaded insertion operator
+std::ostream &operator<<(std::ostream &os, const Fixed &fixed);
