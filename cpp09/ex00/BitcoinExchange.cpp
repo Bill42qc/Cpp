@@ -1,118 +1,108 @@
 #include "BitcoinExchange.hpp"
-#include <iostream>
-#include <fstream>
 #include <sstream>
-#include <map>
-#include <cmath>
-#include <cstdlib>
+#include <stdexcept>
+#include <iostream>
 
-BitcoinExchange::BitcoinExchange(const std::string& databaseFile) : databaseFile(databaseFile) {}
+BitcoinExchange::BitcoinExchange() {}
 
 BitcoinExchange::~BitcoinExchange() {}
 
-BitcoinExchange::BitcoinExchange(const BitcoinExchange& other) : databaseFile(other.databaseFile) {}
+BitcoinExchange::BitcoinExchange(const BitcoinExchange& other) {
+    bitcoinPrices = other.bitcoinPrices;
+}
 
 BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& other) {
     if (this != &other) {
-        databaseFile = other.databaseFile;
+        bitcoinPrices = other.bitcoinPrices;
     }
     return *this;
 }
 
-void BitcoinExchange::processFile(const std::string& inputFile) {
-    std::ifstream file(inputFile.c_str());
+BitcoinExchange::BitcoinExchange(const std::string& filename) {
+    std::ifstream file(filename);
     if (!file) {
-        std::cerr << "Error: could not open file." << std::endl;
-        return;
+        throw std::invalid_argument("Error: could not open bitcoin prices file.");
     }
 
-    std::map<std::string, float> bitcoinValues;
     std::string line;
     while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::string dateStr, valueStr;
-        char separator;
-
-        if (!(iss >> dateStr >> separator >> valueStr)) {
-            std::cerr << "Error: bad input => " << line << std::endl;
-            continue;
+        std::stringstream ss(line);
+        std::string date_str, price_str;
+        if (std::getline(ss, date_str, ',') && std::getline(ss, price_str)) {
+            try {
+                double price = std::stod(price_str);
+                bitcoinPrices[date_str] = price;
+            } catch (const std::invalid_argument& e) {
+                // Skip invalid lines
+                continue;
+            } catch (const std::out_of_range& e) {
+                // Skip lines with too large values
+                continue;
+            }
         }
-
-        if (separator != '|' || dateStr.size() != 10 || valueStr.empty()) {
-            std::cerr << "Error: bad input => " << line << std::endl;
-            continue;
-        }
-
-        float value = strtof(valueStr.c_str(), NULL);
-        if (value <= 0 && value != -1) {
-            std::cerr << "Error: not a positive number." << std::endl;
-            continue;
-        }
-
-        bitcoinValues[dateStr] = value;
     }
-    file.close();
 
-    std::ifstream db(databaseFile.c_str());
-    if (!db) {
-        std::cerr << "Error: could not open database file." << std::endl;
+    file.close();
+}
+
+double BitcoinExchange::getBitcoinPrice(const std::string& date) const {
+    std::map<std::string, double>::const_iterator it = bitcoinPrices.lower_bound(date);
+    if (it == bitcoinPrices.begin() || (it != bitcoinPrices.end() && it->first != date)) {
+        --it;
+    }
+    return it->second;
+}
+
+bool BitcoinExchange::isValidValue(const std::string& value_str) const {
+    try {
+        double value = std::stod(value_str);
+        if (value <= 0) {
+            std::cerr << "Error: not a positive number." << std::endl;
+            return false;
+        }
+        if (value > 1000) {
+            std::cerr << "Error: too large a number." << std::endl;
+            return false;
+        }
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: not a valid value => " << value_str << std::endl;
+        return false;
+    }
+    return true;
+}
+
+void BitcoinExchange::processInputFile(const std::string& input_filename) {
+    std::ifstream input_file(input_filename);
+    if (!input_file) {
+        std::cerr << "Error: could not open input file." << std::endl;
         return;
     }
 
-    std::string lastDate;
-    while (std::getline(db, line)) {
-        std::istringstream iss(line);
-        std::string dateStr, valueStr;
-        char separator;
-
-        if (!(iss >> dateStr >> separator >> valueStr)) {
+    std::string line;
+    while (std::getline(input_file, line)) {
+        if (line.find('|') == std::string::npos) {
             std::cerr << "Error: bad input => " << line << std::endl;
             continue;
         }
 
-        if (separator != ',' || dateStr.size() != 10 || valueStr.empty()) {
-            std::cerr << "Error: bad input => " << line << std::endl;
+        std::stringstream ss(line);
+        std::string date_str, value_str;
+        getline(ss, date_str, '|');
+        getline(ss, value_str, '|');
+
+        if (!isValidValue(value_str)) {
             continue;
         }
 
-        float value = strtof(valueStr.c_str(), NULL);
-        if (value <= 0 && value != -1) {
-            std::cerr << "Error: not a positive number." << std::endl;
-            continue;
-        }
-
-        bitcoinValues[dateStr] = value;
-        lastDate = dateStr;
-    }
-    db.close();
-
-    file.open(inputFile.c_str());
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::string dateStr, valueStr;
-        char separator;
-
-        if (!(iss >> dateStr >> separator >> valueStr)) {
-            std::cerr << "Error: bad input => " << line << std::endl;
-            continue;
-        }
-
-        if (separator != '|' || dateStr.size() != 10 || valueStr.empty()) {
-            std::cerr << "Error: bad input => " << line << std::endl;
-            continue;
-        }
-
-        float value = strtof(valueStr.c_str(), NULL);
-        if (value <= 0 && value != -1) {
-            std::cerr << "Error: not a positive number." << std::endl;
-            continue;
-        }
-
-        if (bitcoinValues.find(dateStr) != bitcoinValues.end()) {
-            std::cout << dateStr << " => " << value << " = " << bitcoinValues[dateStr] << std::endl;
-        } else {
-            std::cout << dateStr << " => " << value << " = " << bitcoinValues[lastDate] << std::endl;
+        try {
+            double value = std::stod(value_str);
+            std::cout << date_str << " => " << value_str << " = " << getBitcoinPrice(date_str) * value << std::endl;
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "Error: not a valid value => " << value_str << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "Error: too large a number." << std::endl;
         }
     }
-    file.close();
+
+    input_file.close();
 }
