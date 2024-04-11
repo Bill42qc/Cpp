@@ -19,7 +19,6 @@ void Span::addNumber(int number) {
     _numbers.push_back(number);
 }
 
-//inding the maximum absolute difference between any two elements in the stored collection of integers.
 int Span::shortestSpan() const {
     if (_numbers.size() <= 1)
         throw std::runtime_error("Not enough elements to find span");

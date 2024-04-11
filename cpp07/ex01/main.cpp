@@ -11,7 +11,7 @@ void print(T val) {
 int main() {
     int intArray[] = {1, 2, 3};
     std::cout << "Testing with int :" << std::endl;
-    iter(intArray, -3, print<int>);
+    iter(intArray, 3, print<int>);
     std::cout << std::endl;
 
     double doubleArray[] = {1.1, 2.2, 3.3};

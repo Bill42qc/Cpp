@@ -12,6 +12,8 @@ int main() {
     std::cout << "Top element in MutantStack: " << mutantStack.top() << std::endl;
     mutantStack.pop();
     std::cout << "Size of MutantStack after popping: " << mutantStack.size() << std::endl;
+
+    //add element in list
     mutantStack.push(3);
     mutantStack.push(5);
     mutantStack.push(737);
